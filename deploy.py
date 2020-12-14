@@ -1,283 +1,209 @@
-#Universidade Federal de Uberlândia
-#Alunos: Isabela de Carvalho Favareto - 11711EBI025, Maria Luiza de Oliveira R. Pereira - 11811EBI023, Mariana Rigo Estevão - 11711EBI023
-#Professor: Wellington Maycon Santos Bernardes
-#Matéria: Experimental de Circuitos Elétricos 2
-#Tema: Filtros Passivos 
+# -*- coding: utf-8 -*-
+# Universidade Federal de Uberlândia - Faculdade de Engenharia Elétrica
+# Alunos: André de Souza Dantas - 11521EBI009, Rafael Pagotto Miguel - 11321EBI021, Victor Hugo Nogueira de Carvalho – 11621EBI017
+# Disciplina: Experimental de Circuitos Elétricos 2
+# Professor: Wellington Maycon Santos Bernardes
+# Tema: Circuitos Trifásicos Desequilibrados
 
+# Importa as bibliotecas usadas
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 import dash
-import dash_html_components as html
+import dash_table
 import dash_core_components as dcc
-
+import dash_html_components as html
 from dash.dependencies import Input, Output
-from dash.exceptions import PreventUpdate
 
-from cmath import polar, rect
-from math import degrees, radians, sqrt
-import numpy as np
+# Define variables
+apptitle = "Circuitos Trifásicos Desequilibrados"
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+# Initiate app
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css', 'https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-app.title = "Filtros Passivos"
-app.config['suppress_callback_exceptions']=True
+app.title=apptitle
 server = app.server
 
-ultima_contagem_de_clique = 0
-
-app.layout = html.Div(children=[
-	html.Link(href="https://fonts.googleapis.com/css2?family=Indie+Flower&family=Open+Sans+Condensed:ital,wght@0,300;1,300&display=swap", rel="stylesheet"),
-	html.H1("Filtros Passivos"),
-	html.H3("Alunos: Isabela de Carvalho Favareto, Maria Luiza de Oliveira R. Pereira e Mariana Rigo Estevão", style={"font-family": 'Open Sans Condensed'}),
-  html.H4("Professor: Wellington Maycon Santos Bernardes",  style={"font-family": 'Open Sans Condensed'}),
-	dcc.Tabs(id="abas", value="aba-Filtros", children=[
-		dcc.Tab(label="Filtros Passivos", value="aba-Filtros Passivos"),
-        dcc.Tab(label="Tipos de Filtros", value="aba-Tipos de Filtros"),
-		dcc.Tab(label="Calculadora", value="aba-calculadora"),
-	]),
-	html.Div(id="conteudo"),
+# Set up the layout
+app.layout = html.Div([
+    dcc.Location(id='url', refresh=False),
+    html.Div(id='page-content')
 ])
 
-a = rect(1.0, radians(120))
-link_equacao = "https://latex.codecogs.com/svg.latex?{}"
-#tensão de fase (Tensão de entrada/sqrt(3) * T)
-#tensão de linha (Tensão de entrada/sqrt(3) * variavel_de_conversao)
-#correntes linha = fase [(Tensão de entrada/sqrt(3))/Z]
+# Pagina Home "/"
+index_page = html.Div(children=[
+ # Cabecalho de navegacao entre paginas
+ html.Div(className='bg-primary', children=[
+  html.Div(className='container d-flex flex-row align-items-center', style={'padding':'10px 0 10px 0', 'color':'white'} , children=[
+   dcc.Link('Circuitos Trifásicos Desequilibrados', style={'fontSize': '22px', 'color': 'white', 'textDecoration': 'none', 'fontWeight': 'bold'}, href='/'),
+   html.Div(className='right', style={'fontSize': '16px', 'position': 'absolute', 'right':'0'} , children=[
+    dcc.Link('Teoria', href='/teoria', style={'marginRight': '10px', 'color': 'white'}),
+    dcc.Link('Simulações', href='/simulacoes', style={'marginRight': '10px', 'color': 'white'}),
+    dcc.Link('Sobre', href='/sobre', style={'marginRight': '10px', 'color': 'white'})
+   ])
+  ])
+ ]),
+ # Corpo da página
+ html.Div(className='container', style={'marginTop': '20px', 'fontSize': '16px'}, children=[
+  html.H1('INTRODUÇÃO'),
+  html.P('Visto que os circuitos apresentam desequilíbrios em várias situações e circuitos desequilibrados são de uso cotidiano de parte da população, é notável a importância do estudo e da compreensão do comportamento desses sistemas.'),
+  html.P('Costuma-se usar um sistema de quatro fios (3F+1N) para manter a tensão estável ao fornecer um caminho para a corrente de neutro, oriunda do desequilíbrio de tensão, garantindo maior eficiência na distribuição de energia e consequentemente entregando uma maior potência ativa ao circuito, o que otimiza o funcionamento do sistema a partir da redução de perdas desnecessárias de potência e energia.'),
+  html.Br(),
+  html.H1('CIRCUITOS TRIFÁSICOS'),
+  html.Br(),
+  html.Div(className='d-flex', children=[
+   html.Div(style={'margin': '5px'}, children=[
+    html.H3('Estrela'),
+    html.Img(src="https://i.imgur.com/U6sCduq.png")]),
+   html.Div(style={'margin': '5px'}, children=[
+    html.Br(),
+    html.Img(src="https://i.imgur.com/kZQFUEw.png")
+   ])
+  ]), 
+  html.Br(),
+  html.H3('Triangulo'),
+  html.Img(src="https://i.imgur.com/3Sq7CQL.png"), 
+ ])
+])
 
-def formatarComplexo(z):
-	complexo_polar = polar(z)
-	modulo = complexo_polar[0]
-	angulo_radianos = complexo_polar[1]
-	angulo_graus = degrees(angulo_radianos)
-	return "{}\\angle {}\\degree ".format(modulo, angulo_graus)
+# Pagina Teoria "/teoria"
+teoria_page = html.Div(children=[
+ # Cabecalho de navegacao entre paginas
+ html.Div(className='bg-primary', children=[
+  html.Div(className='container d-flex flex-row align-items-center', style={'padding':'10px 0 10px 0', 'color':'white'} , children=[
+   dcc.Link('Circuitos Trifásicos Desequilibrados', style={'fontSize': '22px', 'color': 'white', 'textDecoration': 'none', 'fontWeight': 'bold'}, href='/'),
+   html.Div(className='right', style={'fontSize': '16px', 'position': 'absolute', 'right':'0'} , children=[
+    dcc.Link('Teoria', href='/teoria', style={'marginRight': '10px', 'color': 'white'}),
+    dcc.Link('Simulações', href='/simulacoes', style={'marginRight': '10px', 'color': 'white'}),
+    dcc.Link('Sobre', href='/sobre', style={'marginRight': '10px', 'color': 'white'})
+   ])
+  ])
+ ]),
+ # Corpo da página
+ html.Div(className='container', style={'marginTop': '20px', 'fontSize': '16px'}, children=[
+  html.H1('CIRCUITOS TRIFÁSICOS DESEQUILIBRADOS'),
+  html.Br(),
+  html.H2('Situações de desequilíbrio:') ,
+  html.P('Os circuitos trifásicos se encontram em desequilíbrio devido a carga, caso haja alguma variação entre as distribuições de cargas, ou pela variação da demanda. No caso do desequilíbrio oriundo das fontes, esse se deve a diferentes tensões e/ou fasores entre as elas.'),
+  html.Br(),
+  html.H2('Análises:'),
+  html.P('Sistema 3F+N'),
+  html.P('Esses sistemas podem ser resolvidos por meio das análises de malha ou nodal, já sabendo que as impedâncias são diferentes então usa-se as seguintes equações para determinar as correntes.'),
+  html.Br(),
+  html.P('Ia=  Van/Za;          Ib=  Vbn/Zb;            Ic=  Vcn/Zc.'),
+  html.P('Visto que as correntes de linha apresentaram valores distintos,conclui-se que a corrente no neutro é diferente de zero e pode ser encontrada a partir de:'),
+  html.P('In = -(Ia+Ib+Ic)'),
+  html.P('A presença do neutro mantém a estabilidade das tensões de fase nas cargas. No caso da desconexão do mesmo, é gerada uma diferença de potencial entre o ponto neutro da fonte e o ponto neutro da carga, por isso, as tensões de fase na carga não são as mesmas tensões de fase provenientes da fonte. '),
+  html.H3('Sistema 3F'),
+  html.P('Quando há três fios em estrela, sem terra, a tensão de linha AB se dá do maior potencial para o menor, e assim sucessivamente. No caso abaixo, lidando com o maior potencial sendo o de A:'),
+  html.Img(src="https://i.imgur.com/ocTDiQr.png"), 
+  html.P('Vab = (Ian * Za) -  (Ibn * Zb)'),
+  html.P('Vbc = (Ibn * Zb) - (Icn * Zc)'),
+  html.P('Vca = (Icn * Zc) - (Ian * Za)'),
+  html.H4('Então:'),
+  html.P('Ian = [(Vab * Zc) - (Vca * Zb)] / (Za*Zb) + (Za*Zc) + (Zb*Zc)'),
+  html.P('Ibn = [(Vbc * Za) - (Vab * Zc)] / (Za*Zb) + (Za*Zc) + (Zb*Zc)'),
+  html.P('Icn = [(Vca * Zb) - (Vbc * Za) / (Za*Zb) + (Za*Zc) + (Zb*Zc)'),
+  html.H3('Potências:'),
+  html.P('Unidades de medida (W) Watts, (VA) Volt-Ampere, (VAr) Volt-Ampere reativo.'),
+  html.H3('Triângulo de potências:'),
+  html.Img(src="https://i.imgur.com/WR64uBv.png"),
+  html.H3('Fator de potência'),
+  html.P('cos φ : Factor de Potência'),
+  html.P('P[W]/S[VA] = cos φ'),
+  html.P('Um baixo fator de potência da carga é causa de perdas na linha de alimentação devido a quedas de tensão na linha por excesso de corrente'),
+  html.H3('Ativa'),
+  html.P('P = (VI cos φ) ← Potência Ativa (W)'),
+  html.P('Potência consumida pelo equipamento'),
+  html.H3('Reativa'),
+  html.P('Q = S sen φ ← Potência Reativa (VAr)'),
+  html.P('Energia trocada entre a fonte e a carga (conjunto bobina e condensador) Potencia ‘inútil’, perdas.'),
+  html.H3('Aparente'),
+  html.P('P = S cos φ ← S: Potência Aparente (VA)'),
+  html.P('Valor nominal de equipamentos de potência, ex: transformadores. Magnitude da potência total.'),
+  html.H2('Aplicações'),
+  html.P('Os sistemas desequilibrados são vistos por exemplo, em situações em que uma distribuição possui duas residências e uma indústria, cujos equipamentos possuem uma necessidade maior do que os residenciais. A presença do neutro visa a manutenção do fornecimento de tensão estável, por possibilitar um trajeto para In, que resulta do desequilíbrio de tensão.'),
+  html.P('Existe uma norma que trata do valor máximo de desequilíbrio permitido, que o estabelece como 20%, e caso esse valor seja atingido ou até ultrapassado, mudanças precisaram ser feitas. Uma diferença de corrente nas fases de um circuito primário, pode aumentar bastante a queda de tensão na fase com maior carga, o que pode gerar uma corrente no neutro em decorrência de um desequilíbrio na tensão'),
+  html.H2('CONCLUSÃO'),
+  html.P('A partir da análise dos circuitos foi notada uma perda de potência ativa devido a existência de uma diferença de potencial entre os neutros das cargas e o das fontes. No caso da conexão dos dois neutros, conclui-se que ambos se tornam agora equipotenciais, reduzindo a perda de corrente oriunda da diferença de potencial que existia entre eles.'),
+  html.H2('REFERÊNCIAS'),
+  html.P('[1]HART, W. Daniel. Eléctronica de Potencia. Madrid: Pearson Educación, 2001. Disponível em:https://www.amperonline.com/sites/library/Electronica%20de%20Potencia.%201ra-Edicion-Daniel-W-Hart.pdf. Acesso em 06 de dez. de 2020. '),
+  html.P('[2]SANTOS, N. José. Compensação do Factor de Potência. FEUP, 2006. Disponível em: https://paginas.fe.up.pt/~jns/material_didatico/CorreccaoFactorPotenciaFinal.pdf. Acesso em 04 de dez. de 2020.'),
+  html.P('[3] GOMES, V. Flávio. Circuitos Trifásicos Equilibrados e Desequilibrados. UFJF, 2012. Disponível em: https://www.ufjf.br/flavio_gomes/files/2012/11/Aula-04_ENE005.pdf. Acesso em: 26 de nov. de 2020.'),
+  html.P('[4] BOYLESTAD, L. Robert. Análise de Circuitos. 12. Ed. – São Paulo: Pearson Prentice Hall, 2012.'),
+ ])
+])
 
-@app.callback(Output('conteudo', 'children'),
-			[Input('abas', 'value')])
-def renderizar_aba(aba):
-	if aba == "aba-introducao":
-		#mostrar conteúdo da parte de informações
-		return html.Div(children=[
-                        html.Link(href="https://fonts.googleapis.com/css2?family=Indie+Flower&family=Open+Sans+Condensed:ital,wght@0,300;1,300&display=swap", rel="stylesheet"),
-                        html.H6("CIRCUITOS TRIFÁSICOS EQUILIBRADOS", style={"font-family": 'Open Sans Condensed'}),
-                        html.Br(),
-			html.P("O sistema trifásico é equilibrado pelo fato das três tensões, também chamadas de fases, estarem defasadas em 120° uma da outra, quando isso não acontece temos um circuito trifásico desequilibrado."),
-                        html.P("Para a geração de tensão alternada trifásica de um gerador, temos três bobinas defasadas em 120 graus elétricos no espaço que geram um conjunto de três tensões de mesmo valor máximo, defasadas de 120 graus elétricos no tempo. Em um gerador trifásico, podemos configurar a conexão das bobinas de diversas formas diferentes, como: ligação em estrela e ligação  em triângulo."),
-                        html.Br(),
-                        html.Img(src="https://uploaddeimagens.com.br/images/002/897/739/original/gerador.png?1601298591"),
-			html.P("Figura 1 - Esquema de gerador com três bobinas defasadas em 120°"),
-                        html.Br(),
-                        html.Br(),
-                        html.H6("LIGAÇÃO ESTRELA", style={"font-family": 'Open Sans Condensed'}),
-                        html.Br(),
-                        html.P("Na ligação estrela temos um ponto em comum com as três bobinas do circuito, além de um neutro que também se encontra nesse mesmo ponto. Em sistemas trifásicos cujo o fechamento é feito em estrela é possível obter dois níveis de tensão."),
-                        html.P("A tensão de linha é medida em uma fase-fase, já a tensão de fase é medida de uma fase com relação ao neutro, entretanto caso a ligação estrela não tenha um neutro o valor da tensão de linha e de fase será a mesma, além disso a corrente de linha é a mesma que a corrente de fase."),
-                        html.Br(),
-                        html.Img(src="https://uploaddeimagens.com.br/images/002/897/743/original/Esquema_de_liga%C3%A7%C3%A3o_estrela.png?1601298799"),
-			html.P("Figura 2 - Esquema de ligação estrela"),
-                        html.Br(),
-			html.P("De acordo a figura temos:"),
-                        html.Br(),
-                        html.Img(src="https://uploaddeimagens.com.br/images/002/897/746/original/tabela1.png?1601298868"),
-                        html.P("Tabela 01 - Tensões"),
-                        html.Br(),
-                        html.P("Um gerador conectado em estrela tem a possibilidade de ser configurado em duas sequências de fases diferentes, essa sequência é determinada pela ordem que as tensões das fases passam pelo seu valor máximo."),
-                        html.P("Temos a sequência de fase direta (positiva) - ABC e a sequência de fase indireta (negativa) - CBA."),
-                        html.Br(),
-                        html.Img(src="https://uploaddeimagens.com.br/images/002/897/750/original/Sequ%C3%AAncia_positiva_%28direta%29_-_ABC.png?1601298982"),
-                        html.P("Figura 3 - Sequência positiva (direta) - ABC"),
-                        html.Br(),
-                        html.Img(src="https://uploaddeimagens.com.br/images/002/897/752/original/Diagrama_de_fases_sequ%C3%AAncia_positiva_%28direta%29_-_ABC.png?1601299059"),
-                        html.P("Figura 4 - Diagrama de fases sequência positiva (direta) - ABC"),
-                        html.Br(),
-                        html.Img(src="https://uploaddeimagens.com.br/images/002/897/758/original/Sequ%C3%AAncia_negativa_%28indireta%29_-_CBA.png?1601299237"), 
-                        html.P("Figura 5 - Sequência negativa (indireta) - CBA"),
-                        html.Br(),
-                        html.Img(src="https://uploaddeimagens.com.br/images/002/897/763/original/Diagrama_de_fases_Sequ%C3%AAncia_negativa_%28indireta%29_-_CBA.png?1601299337"), 
-                        html.P("Figura 6 - Diagrama de fases Sequência negativa (indireta) - CBA"),
-			html.Br(),
-                        html.Br(),
-                        html.P("- Para uma sequência direta, a tensão de linha é a tensão de fase multiplicada por √3 e adiantada 30º, assim temos a seguinte relação:"),
-                        html.Br(),
-                        html.Img(src="https://uploaddeimagens.com.br/images/002/897/875/original/for1.png?1601302350"), 
-			html.Br(),
-                        html.Br(),
-                        html.P("- Para uma sequência indireta, tensão de linha é a tensão de fase multiplicada por √3 e atrasada de 30º, assim temos a seguinte relação:"),
-                        html.Br(),
-                        html.Img(src="https://uploaddeimagens.com.br/images/002/897/878/original/for2.png?1601302419"), 
-			html.Br(),
-                        html.Br(),
-                        html.P("O circuito estrela-estrela abaixo é formado por uma fonte trifásica em estrela equilibrada ligada com uma carga em estrela também em equilíbrio, para esse circuito iremos calcular as correntes de linha, corrente de neutro e as tensões de linha."),
-                        html.Br(),
-                        html.Img(src="https://uploaddeimagens.com.br/images/002/897/939/original/Untitled_Diagram_%283%29.png?1601304105"),
-                        html.P("Figura 7 - Gerador conectado em Y com uma carga conectada em Y"),
-                        html.Br(),
-                        html.Br(),
-                        html.P("Os centros das estrelas n e N estão ao mesmo potencial, e como o trabalharemos com um circuito totalmente equilibrado, a corrente do fio neutro In será zero, assim:"),
-                        html.Br(),
-                        html.Img(src="https://uploaddeimagens.com.br/images/002/897/916/original/correntes.png?1601303612"),
-                        html.Br(),
-                        html.Br(),
-                        html.P("Para calcular as correntes deste circuito, fizemos seguindo o modelo abaixo."),
-                        html.Br(),
-                        html.Img(src="https://uploaddeimagens.com.br/images/002/897/921/original/formulacorrente.png?1601303734"),
-                        html.Br(),
-                        html.Br(),
-                        html.P("Após ver a parte teórica é possível realizar os cálculos, ou então,  colocar na nossa calculadora os dados necessários para obter as respostas desejadas."),
-                        
-		])
-	if aba == "aba-calculadora":
-		#mostrar conteúdo da parte da calculadora
-		return html.Div(children=[
-			html.Br(),
-                        html.H6("INSTRUÇÕES:", style={"font-family": 'Open Sans Condensed'}),
-                        
-			dcc.Markdown('''
-			> Para inserir as impedâncias use a forma: x+yj, onde x e y são valores numéricos. Se usar x+jy não funcionará.
-			>
-			> Observações:
-			> - Para divisões: use **1j**/z ou z/**1j**;
-			> - Para multiplicar por j, use (z)\***1j**, onde Z é um numéro real ou complexo.
-			'''),
-                        html.Br(),
-			dcc.Dropdown(id="seletor-sequencia", value="ABC", clearable=False, options=[
-				{"label": "Sequência Direta", "value": "ABC"},
-				{"label": "Sequência Inversa", "value": "CBA"}
-			]),
-			html.Div(style={"display": "flex"}, children=[
-				dcc.Input(id="campo-tensao", type="number", placeholder="Valor da tensão"),
-				dcc.Input(id="campo-impedancia-linha", type="text", placeholder="Valor da impedância de Linha", style={"flex-grow":'1'}),
-				dcc.Input(id="campo-impedancia-fase", type="text", placeholder="Valor da impedância de Fase", style={"flex-grow":'1'}),
-				html.Button("Calcular", id="btn-calcular"),
-			]),
-			html.Div(id="resultado-calculadora")
-		])
-	return ""
+# Pagina Sobre "/sobre"
+aboutus_page = html.Div(children=[
+ # Cabecalho de navegacao entre paginas
+ html.Div(className='bg-primary', children=[
+  html.Div(className='container d-flex flex-row align-items-center', style={'padding':'10px 0 10px 0', 'color':'white'} , children=[
+   dcc.Link('Circuitos Trifásicos Desequilibrados', style={'fontSize': '22px', 'color': 'white', 'textDecoration': 'none', 'fontWeight': 'bold'}, href='/'),
+   html.Div(className='right', style={'fontSize': '16px', 'position': 'absolute', 'right':'0'} , children=[
+    dcc.Link('Teoria', href='/teoria', style={'marginRight': '10px', 'color': 'white'}),
+    dcc.Link('Simulações', href='/simulacoes', style={'marginRight': '10px', 'color': 'white'}),
+    dcc.Link('Sobre', href='/sobre', style={'marginRight': '10px', 'color': 'white'})
+   ])
+  ])
+ ]),
+ # Corpo da página
+ html.Div(className='container', style={'marginTop': '20px', 'fontSize': '16px'}, children=[
+  html.H1('Sobre'),
+  html.Br(),
+  html.H3('Alunos'),
+  html.P('André de Souza Dantas - 11521EBI009'),
+  html.P('Rafael Pagotto Miguel - 11321EBI021'),
+  html.P('Victor Hugo Nogueira de Carvalho - 11621EBI017'),
+  html.Br(),
+  html.P('Professor: Wellington Maycon Santos Bernardes'),
+  html.P('Tema: Circuitos Trifásicos Desequilibrados'),
+  html.P('Disciplina Experimental de Circuítos Elétricos 2 - Turma E3')
+ ])
+])
 
-@app.callback(Output('resultado-calculadora', 'children'),
-			[Input('seletor-sequencia', 'value'),
-			Input('campo-tensao', 'value'),
-			Input('campo-impedancia-linha', 'value'),
-			Input('campo-impedancia-fase', 'value'),
-			Input('btn-calcular', 'n_clicks')])
-def calcular(sequencia, tensao, impedancia_linha, impedancia_fase, cliques_btn_calcular):
-	global ultima_contagem_de_clique
-	if cliques_btn_calcular is not None:
-		if cliques_btn_calcular > ultima_contagem_de_clique:
-			ultima_contagem_de_clique = cliques_btn_calcular
-			if sequencia == "ABC":
-				T = np.array([1, a*a, a])
-				variavel_de_conversao = rect(sqrt(3), radians(30))
-				
-				if tensao is None:
-					return "Insira a tensão"
-				
-				matriz_tensoes = (tensao/sqrt(3))*T
-				Van = matriz_tensoes[0]
-				Vbn = matriz_tensoes[1]
-				Vcn = matriz_tensoes[2]
+# Pagina Simulacao "/simulacoes"
+simulacao_page = html.Div(children=[
+ # Cabecalho de navegacao entre paginas
+ html.Div(className='bg-primary', children=[
+  html.Div(className='container d-flex flex-row align-items-center', style={'padding':'10px 0 10px 0', 'color':'white'} , children=[
+   dcc.Link('Circuitos Trifásicos Desequilibrados', style={'fontSize': '22px', 'color': 'white', 'textDecoration': 'none', 'fontWeight': 'bold'}, href='/'),
+   html.Div(className='right', style={'fontSize': '16px', 'position': 'absolute', 'right':'0'} , children=[
+    dcc.Link('Teoria', href='/teoria', style={'marginRight': '10px', 'color': 'white'}),
+    dcc.Link('Simulações', href='/simulacoes', style={'marginRight': '10px', 'color': 'white'}),
+    dcc.Link('Sobre', href='/sobre', style={'marginRight': '10px', 'color': 'white'})
+   ])
+  ])
+ ]),
+ # Corpo da página
+ html.Div(className='container', style={'marginTop': '20px', 'fontSize': '16px'}, children=[
+  html.H1('GRÁFICOS'),
+  html.Br(),
+  html.H3('Dado o seguinte circuito:'),
+  html.Img(src="https://i.imgur.com/bA022gn.png"),
+  html.Img(src="https://i.imgur.com/RpZavtT.png"),
+  html.P('No sistema 3F+N, as correntes são diferentes, e para manter as tensões das cargas semelhantes àquelas das fontes, a corrente no neutro chega a quase 1A. As concessionárias indicam o uso do Neutro exatamente para manter os valores de tensão na carga.'),
+  html.Img(src="https://i.imgur.com/xr286Ro.png", style={'maxWidth':'100%', 'width': '600px'}),
+  html.P('O desequilíbrio pode fazer com que a tensão nas cargas seja maior do que a tensão das fontes. Nesse caso, a tensão em Vbn passa de 180V, enquanto a tensão da fonte era de 115V. Van = 148V e  Vcn = 51V.'),
+ ])
+])
 
-				matriz_tensoes_linha = matriz_tensoes * variavel_de_conversao
-				Vab = matriz_tensoes_linha[0]
-				Vbc = matriz_tensoes_linha[1]
-				Vca = matriz_tensoes_linha[2]
+ # Update the index
+@app.callback(dash.dependencies.Output('page-content', 'children'),
+              [dash.dependencies.Input('url', 'pathname')])
 
-				if impedancia_fase is None:
-					return "Insira a impedancia de fase"
-				if impedancia_linha is None:
-					return "Insira a impedancia de linha (caso não exista, coloque 0)"
-
-				Z = eval(impedancia_fase + "+" + impedancia_linha)
-
-				matriz_correntes = Van/Z * T
-				Ian = matriz_correntes[0]
-				Ibn = matriz_correntes[1]
-				Icn = matriz_correntes[2]
-
-				return html.Div(children=[
-					html.Br(),
-                                        html.P("Valor eficaz das tensões de linha:"),
-					html.Img(src=link_equacao.format("V_{AN_{RMS}} = " + str(formatarComplexo(Van)) + "V" )),
-					html.Br(),
-					html.Img(src=link_equacao.format("V_{BN_{RMS}} = " + str(formatarComplexo(Vbn)) + "V" )),
-					html.Br(),
-					html.Img(src=link_equacao.format("V_{CN_{RMS}} = " + str(formatarComplexo(Vcn)) + "V" )),
-					html.Br(),
-					html.Br(),
-                                        html.Br(),
-                                        html.P("Valor eficaz das tensões de fase:"),
-					html.Img(src=link_equacao.format("V_{AB_{RMS}} = " + str(formatarComplexo(Vab)) + "V" )),
-					html.Br(),
-					html.Img(src=link_equacao.format("V_{BC_{RMS}} = " + str(formatarComplexo(Vbc)) + "V" )),
-					html.Br(),
-					html.Img(src=link_equacao.format("V_{CA_{RMS}} = " + str(formatarComplexo(Vca)) + "V" )),
-					html.Br(),
-					html.Br(),
-                                        html.Br(),
-                                        html.P("Valor eficaz das correntes:"),
-					html.Img(src=link_equacao.format("I_{Afase_{RMS}} = I_{Alinha_{RMS}} = " + str(formatarComplexo(Ian)) + "A" )),
-					html.Br(),
-					html.Img(src=link_equacao.format("I_{Bfase_{RMS}} = I_{Blinha_{RMS}} = " + str(formatarComplexo(Ibn)) + "A" )),
-					html.Br(),
-					html.Img(src=link_equacao.format("I_{Cfase_{RMS}} = I_{Clinha_{RMS}} = " + str(formatarComplexo(Icn)) + "A" )),
-					html.Br(),
-				])
-			if sequencia == "CBA":
-				T = np.array([1, a, a*a])
-				variavel_de_conversao = rect(sqrt(3), radians(-30))
-
-				if tensao is None:
-					return "Insira a tensão"
-				
-				matriz_tensoes = (tensao/sqrt(3))*T
-				Van = matriz_tensoes[0]
-				Vbn = matriz_tensoes[1]
-				Vcn = matriz_tensoes[2]
-
-				matriz_tensoes_linha = matriz_tensoes * variavel_de_conversao
-				Vab = matriz_tensoes_linha[0]
-				Vbc = matriz_tensoes_linha[1]
-				Vca = matriz_tensoes_linha[2]
-
-				if impedancia_fase is None:
-					return "Insira a impedancia de fase"
-				if impedancia_linha is None:
-					return "Insira a impedancia de linha (caso não exista, coloque 0)"
-				
-				Z = eval(impedancia_fase + "+" + impedancia_linha)
-
-				matriz_correntes = Van/Z * T
-				Ian = matriz_correntes[0]
-				Ibn = matriz_correntes[1]
-				Icn = matriz_correntes[2]
-
-				return html.Div(children=[
-					html.Br(),
-                                        html.P("Valor eficaz das tensões de linha:"),
-                                        html.Img(src=link_equacao.format("V_{AN_{RMS}} = " + str(formatarComplexo(Van)) + "V" )),
-					html.Br(),
-					html.Img(src=link_equacao.format("V_{BN_{RMS}} = " + str(formatarComplexo(Vbn)) + "V" )),
-					html.Br(),
-					html.Img(src=link_equacao.format("V_{CN_{RMS}} = " + str(formatarComplexo(Vcn)) + "V" )),
-					html.Br(),
-                                        html.Br(),
-					html.Br(),
-                                        html.P("Valor eficaz das tensões de fase:"),
-					html.Img(src=link_equacao.format("V_{AB_{RMS}} = " + str(formatarComplexo(Vab)) + "V" )),
-					html.Br(),
-					html.Img(src=link_equacao.format("V_{BC_{RMS}} = " + str(formatarComplexo(Vbc)) + "V" )),
-					html.Br(),
-					html.Img(src=link_equacao.format("V_{CA_{RMS}} = " + str(formatarComplexo(Vca)) + "V" )),
-					html.Br(),
-					html.Br(),
-                                        html.Br(),
-                                        html.P("Valor eficaz das correntes:"),
-					html.Img(src=link_equacao.format("I_{Afase_{RMS}} = I_{Alinha_{RMS}} = " + str(formatarComplexo(Ian)) + "A" )),
-					html.Br(),
-					html.Img(src=link_equacao.format("I_{Bfase_{RMS}} = I_{Blinha_{RMS}} = " + str(formatarComplexo(Ibn)) + "A" )),
-					html.Br(),
-					html.Img(src=link_equacao.format("I_{Cfase_{RMS}} = I_{Clinha_{RMS}} = " + str(formatarComplexo(Icn)) + "A" )),
-					html.Br(),
-				])
-	raise PreventUpdate
-	return ""
-
+# Funcao que determina a nevagacao entre paginas
+def display_page(pathname):
+    if pathname == '/':
+        return index_page
+    elif pathname == '/teoria':
+        return teoria_page
+    elif pathname == '/simulacoes':
+        return simulacao_page
+    elif pathname == '/sobre':
+        return aboutus_page
+    else:
+        return index_page
+ 
 if __name__ == '__main__':
-	app.run_server(debug=True)
+ app.run_server(debug=True)
